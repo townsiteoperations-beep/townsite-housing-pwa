@@ -17,7 +17,13 @@
 <script>
 const GAS_URL='https://script.google.com/macros/s/AKfycbx6HkdPdG-jD4poUls6jFkH92irzKGuxje9aUEs5h9_P4yby7Qv4ZTHSykhPXuswYpiMg/exec';
 const PARENT_ORIGIN=location.origin;
-const $=id=>document.getElementById(id); let bridgeReady=false, pending=new Map(), counter=0, currentHouse='';
+const $=id=>document.getElementById(id);
+
+let bridgeReady = false;
+let bridgeWindow = null;
+let pending = new Map();
+let counter = 0;
+let currentHouse = '';
 const DB='townsiteOfflineDB', STORE='snapshots';
 function dbOpen(){return new Promise((res,rej)=>{const q=indexedDB.open(DB,1);q.onupgradeneeded=()=>q.result.createObjectStore(STORE);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})}
 async function dbPut(key,value){const db=await dbOpen();return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(value,key);tx.oncomplete=res;tx.onerror=()=>rej(tx.error)})}
