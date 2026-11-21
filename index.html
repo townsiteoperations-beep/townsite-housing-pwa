@@ -8,7 +8,8 @@
 <section class="card" id="loginCard"><h2>Employee Login</h2><p class="muted">Gamitin ang existing housing account mo.</p><form id="loginForm"><label>House No.</label><input id="house" required autocomplete="username"><label>Employee Code</label><input id="employee" required><label>PIN (8–12 digits)</label><input id="pin" type="password" inputmode="numeric" pattern="[0-9]{8,12}" minlength="8" maxlength="12" required autocomplete="current-password"><button id="loginBtn">Login and Sync Records</button></form><div id="loginMsg" class="msg hidden"></div><button class="secondary" id="offlineBtn" type="button">Open Saved Offline Records</button><small>Offline mode is read-only and only works on this device/browser after a successful online sync.</small></section>
 <section id="portal" class="hidden">
 <div class="card"><div class="actions"><div style="flex:2"><h2 id="account">Housing account</h2><small id="syncTime">Not synced</small></div><button class="secondary" id="refresh">Refresh / Sync</button><button class="secondary" id="logout">Logout</button></div><div id="portalMsg" class="msg hidden"></div></div>
-<div class="card"><h2>Power Consumption</h2><div class="grid"><div><small>Billing Period</small><div class="stat" id="pPeriod">—</div></div><div><small>Consumption</small><div class="stat" id="pCons">—</div></div><div><small>Allocation</small><div class="stat" id="pAlloc">—</div></div><div><small>Excess</small><div class="stat" id="pExcess">—</div></div></div><p id="pStatus"></p><h3>Power History</h3><div class="scroll"><table id="powerTable"></table></div></div>
+<div class="card"><h2>Power Consumption</h2><div class="grid"><div><small>Billing Period</small><div class="stat" id="pPeriod">—</div></div><div><small>Consumption</small><div class="stat" id="pCons">—</div></div><div><small>Allocation</small><div class="stat" id="pAlloc">—</div></div><div><small>Excess</small><div class="stat" id="pExcess">—</div></div></div><p id="pStatus"></p><h3>Power History</h3><div class="scroll"><table id="powerTable"></table></div></div><h3>Power Cut-off Schedule</h3>
+<div class="scroll"> <table id="powerCutoffTable"></table> </div>
 <div class="card"><h2>Water Consumption</h2><div class="grid"><div><small>Billing Period</small><div class="stat" id="wPeriod">—</div></div><div><small>Consumption</small><div class="stat" id="wCons">—</div></div><div><small>Allocation</small><div class="stat" id="wAlloc">—</div></div><div><small>Excess</small><div class="stat" id="wExcess">—</div></div></div><p id="wStatus"></p><h3>Water History</h3><div class="scroll"><table id="waterTable"></table></div><h3>Water Cut-off Schedule</h3><div class="scroll"><table id="waterCutoffTable"></table></div></div>
 </section>
 <p class="muted">Offline data is a saved copy from your last successful sync. For the latest readings, connect to the internet and tap Refresh / Sync.</p>
@@ -107,9 +108,132 @@ window.addEventListener('message', e => {
 });
   function startBridge(){if(!GAS_URL.startsWith('https://script.google.com/macros/s/'))return;const u=new URL(GAS_URL);u.searchParams.set('mode','pwaBridge');$('gasBridge').src=u.toString()}
 function drawTable(id,headers,rows){const t=$(id);t.replaceChildren();if(!rows||!rows.length){t.innerHTML='<tbody><tr><td>Wala pang record.</td></tr></tbody>';return}const thead=document.createElement('thead'),hr=document.createElement('tr');(headers||rows[0].map((_,i)=>'Column '+(i+1))).forEach(h=>{const th=document.createElement('th');th.textContent=h;hr.append(th)});thead.append(hr);const body=document.createElement('tbody');rows.forEach(row=>{const tr=document.createElement('tr');row.forEach(v=>{const td=document.createElement('td');td.textContent=v??'';tr.append(td)});body.append(tr)});t.append(thead,body)}
-function drawCutoff(id,rows){const headers=['Billing Month','Billing Year','Cut-off Day','Scheduled Cut-off Date','Scheduled Restoration Date','Cut-off Time','Restoration Time','Status','Remarks'];drawTable(id,headers,(rows||[]).map(r=>headers.map((_,i)=>Object.values(r)[i]??'')))}
-function render(data,offline=false){$('loginCard').classList.add('hidden');$('portal').classList.remove('hidden');$('account').textContent='House No.: '+data.houseNo;$('syncTime').textContent=(offline?'Offline saved copy • ':'Last sync: ')+(data.savedAt||'');const p=data.power||{},ps=data.powerSummary||{},w=data.water||{},ws=data.waterSummary||{};$('pPeriod').textContent=ps.period||'—';$('pCons').textContent=ps.consumption??'0';$('pAlloc').textContent=ps.allocation??'0';$('pExcess').textContent=ps.excess??'0';$('pStatus').textContent='Status: '+(ps.status||'—');$('wPeriod').textContent=ws.period||'—';$('wCons').textContent=ws.consumption??'0';$('wAlloc').textContent=ws.allocation??'0';$('wExcess').textContent=ws.excess??'0';$('wStatus').textContent='Status: '+(ws.status||'—');drawTable('powerTable',p.headers,p.records||[]);drawTable('waterTable',w.headers,w.records||[]);drawCutoff('waterCutoffTable',(data.waterCutoff||{}).records||[]);$('refresh').disabled=offline; if(offline)setMsg('portalMsg','OFFLINE VIEW — read-only. Ipinapakita ang huling records na na-sync.',false);else{$('portalMsg').classList.add('hidden')}}
-async function syncData(house){const login=await rpc('verifyHousePIN',[house,$('employee').value.trim(),$('pin').value]);if(!login||!login.success)throw Error(login?.message||'Hindi nagtagumpay ang login.');const token=login.sessionToken;try{const [power,powerSummary,water,waterSummary,waterCutoff]=await Promise.all([rpc('getMyConsumption',[token]),rpc('getMyConsumptionSummary',[token]),rpc('getMyWaterConsumption',[token]),rpc('getMyWaterConsumptionSummary',[token]),rpc('getMyWaterCutOffSchedule',[token])]);for(const x of [power,powerSummary,water,waterSummary,waterCutoff])if(x&&x.success===false)throw Error(x.message||'Hindi makuha ang records.');const snapshot={houseNo:house,savedAt:new Date().toLocaleString(),power,powerSummary,water,waterSummary,waterCutoff};await dbPut('house:'+house,snapshot);await rpc('logoutHouseSession',[token]).catch(()=>{});return snapshot}catch(err){await rpc('logoutHouseSession',[token]).catch(()=>{});throw err}}
+function drawCutoff(id, rows) {
+  const headers = [
+    'Billing Month',
+    'Billing Year',
+    'Cut-off Day',
+    'Scheduled Cut-off Date',
+    'Cut-off Time',
+    'Restoration Time',
+    'Status',
+    'Remarks'
+  ];
+
+  const tableRows = (rows || []).map(r => [
+    r.billingMonth ?? '',
+    r.billingYear ?? '',
+    r.cutOffDay ?? '',
+    r.scheduledDate ?? '',
+    r.cutOffTime ?? '',
+    r.restorationTime ?? '',
+    r.status ?? '',
+    r.remarks ?? ''
+  ]);
+
+  drawTable(id, headers, tableRows);
+}
+function render(data, offline = false) {
+  $('loginCard').classList.add('hidden');
+  $('portal').classList.remove('hidden');
+
+  $('account').textContent = 'House No.: ' + data.houseNo;
+  $('syncTime').textContent = (offline ? 'Offline saved copy • ' : 'Last sync: ') + (data.savedAt || '');
+
+  const p = data.power || {};
+  const ps = data.powerSummary || {};
+  const w = data.water || {};
+  const ws = data.waterSummary || {};
+
+  $('pPeriod').textContent = ps.period || '—';
+  $('pCons').textContent = ps.consumption ?? '0';
+  $('pAlloc').textContent = ps.allocation ?? '0';
+  $('pExcess').textContent = ps.excess ?? '0';
+  $('pStatus').textContent = 'Status: ' + (ps.status || '—');
+
+  $('wPeriod').textContent = ws.period || '—';
+  $('wCons').textContent = ws.consumption ?? '0';
+  $('wAlloc').textContent = ws.allocation ?? '0';
+  $('wExcess').textContent = ws.excess ?? '0';
+  $('wStatus').textContent = 'Status: ' + (ws.status || '—');
+
+  drawTable('powerTable', p.headers, p.records || []);
+  drawTable('waterTable', w.headers, w.records || []);
+  drawCutoff('powerCutoffTable', (data.powerCutoff || {}).records || []);
+  drawCutoff('waterCutoffTable', (data.waterCutoff || {}).records || []);
+
+  $('refresh').disabled = offline;
+
+  if (offline) {
+    setMsg('portalMsg', 'OFFLINE VIEW — read-only. Ipinapakita ang huling records na na-sync.', false);
+  } else {
+    $('portalMsg').classList.add('hidden');
+  }
+}
+
+async function syncData(house) {
+  const login = await rpc('verifyHousePIN', [
+    house,
+    $('employee').value.trim(),
+    $('pin').value
+  ]);
+
+  if (!login || !login.success) {
+    throw Error(login?.message || 'Hindi nagtagumpay ang login.');
+  }
+
+  const token = login.sessionToken;
+
+  try {
+    const [
+      power,
+      powerSummary,
+      water,
+      waterSummary,
+      waterCutoff,
+      powerCutoff
+    ] = await Promise.all([
+      rpc('getMyConsumption', [token]),
+      rpc('getMyConsumptionSummary', [token]),
+      rpc('getMyWaterConsumption', [token]),
+      rpc('getMyWaterConsumptionSummary', [token]),
+      rpc('getMyWaterCutOffSchedule', [token]),
+      rpc('getMyPowerCutOffSchedule', [token])
+    ]);
+
+    for (const result of [
+      power,
+      powerSummary,
+      water,
+      waterSummary,
+      waterCutoff,
+      powerCutoff
+    ]) {
+      if (result && result.success === false) {
+        throw Error(result.message || 'Hindi makuha ang records.');
+      }
+    }
+
+    const snapshot = {
+      houseNo: house,
+      savedAt: new Date().toLocaleString(),
+      power,
+      powerSummary,
+      water,
+      waterSummary,
+      waterCutoff,
+      powerCutoff
+    };
+
+    await dbPut('house:' + house, snapshot);
+    await rpc('logoutHouseSession', [token]).catch(() => {});
+    return snapshot;
+
+  } catch (err) {
+    await rpc('logoutHouseSession', [token]).catch(() => {});
+    throw err;
+  }
+}
 $('loginForm').addEventListener('submit',async e=>{e.preventDefault();if(!online()){setMsg('loginMsg','Walang internet. Gamitin ang Open Saved Offline Records.',true);return}if(!bridgeReady){setMsg('loginMsg','Hindi pa nakakonekta ang Apps Script Bridge. I-check ang deployment URL.',true);return}const b=$('loginBtn');b.disabled=true;b.textContent='Logging in and syncing...';try{const house=$('house').value.trim();const data=await syncData(house);currentHouse=house;render(data,false);$('pin').value=''}catch(err){setMsg('loginMsg',err.message||'May error sa login.',true)}finally{b.disabled=false;b.textContent='Login and Sync Records'}});
 $('offlineBtn').addEventListener('click',async()=>{const house=$('house').value.trim();if(!house){setMsg('loginMsg','Ilagay ang House No. para mahanap ang saved records.',true);return}const data=await dbGet('house:'+house);if(!data){setMsg('loginMsg','Walang saved offline records para sa House No. na ito. Mag-login muna habang online.',true);return}currentHouse=house;render(data,true)});
 $('refresh').addEventListener('click',async()=>{if(!online()){setMsg('portalMsg','Walang internet. Offline records lamang ang available.',true);return}try{const data=await syncData(currentHouse);render(data,false)}catch(e){setMsg('portalMsg',e.message,true)}});
