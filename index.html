@@ -332,9 +332,27 @@ function closeAnnouncementModal(markSeen=true) {
   }
   modal.classList.add('hidden');
   if(markSeen && Array.isArray(window.pendingTownsiteAnnouncements)) {
+    // Remove only the notice currently displayed, then show the next one.
     window.pendingTownsiteAnnouncements.shift();
-    setTimeout(showNextTownsiteAnnouncement,150);
+    modal.dataset.announcementId='';
+    setTimeout(showNextTownsiteAnnouncement,250);
   }
+}
+
+function formatAnnouncementMonth(value){
+  if(value instanceof Date && !isNaN(value.getTime())){
+    return new Intl.DateTimeFormat('en-PH',{month:'long',year:'numeric',timeZone:'Asia/Manila'}).format(value);
+  }
+  const text=String(value == null ? '' : value).trim();
+  if(!text) return '';
+  // Legacy Apps Script date strings may contain weekday, time and GMT offset.
+  if(/GMT|\b(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b|\d{4}-\d{2}-\d{2}T/i.test(text)){
+    const parsed=new Date(text);
+    if(!isNaN(parsed.getTime())){
+      return new Intl.DateTimeFormat('en-PH',{month:'long',year:'numeric',timeZone:'Asia/Manila'}).format(parsed);
+    }
+  }
+  return text;
 }
 
 async function checkPublishedAnnouncement() {
@@ -343,7 +361,7 @@ async function checkPublishedAnnouncement() {
     const result=await rpc('getPublishedAnnouncements',[]);
     const list=result && result.success && Array.isArray(result.announcements) ? result.announcements : [];
     const unseen=list.filter(a=>a && a.id && !localStorage.getItem('townsiteAnnouncementSeen_'+a.id));
-    if(!unseen.length) return;
+    // Reset queue on every successful login check so both published types are considered.
     window.pendingTownsiteAnnouncements=unseen;
     showNextTownsiteAnnouncement();
   } catch(err) {
@@ -352,17 +370,16 @@ async function checkPublishedAnnouncement() {
 }
 function showNextTownsiteAnnouncement(){
   const queue=window.pendingTownsiteAnnouncements || [];
-  if(!queue.length) return;
+  if(!queue.length || !$('announcementModal').classList.contains('hidden')) return;
   const a=queue[0];
   $('announcementModalTitle').textContent=a.title || (a.readingType==='WATER' ? 'Water Consumption Update' : 'Electricity Consumption Update');
-  $('announcementModalMonth').textContent=(a.billingMonth || '')+' • '+(a.readingType==='WATER' ? 'Water' : 'Electricity');
+  $('announcementModalMonth').textContent=formatAnnouncementMonth(a.billingMonth)+' • '+(a.readingType==='WATER' ? 'Water' : 'Electricity');
   $('announcementModalMessage').textContent=a.message || '';
   $('announcementModal').dataset.announcementId=a.id;
   $('announcementModal').classList.remove('hidden');
 }
 $('announcementDismiss').addEventListener('click',()=>closeAnnouncementModal(true));
 $('announcementViewRecords').addEventListener('click',()=>{
-  window.pendingTownsiteAnnouncements=[];
   closeAnnouncementModal(true);
   showModuleMenu();
   $('portal').scrollIntoView({behavior:'smooth',block:'start'});
