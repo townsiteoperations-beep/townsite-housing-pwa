@@ -9,6 +9,13 @@
 #landing{padding:34px 30px 28px}.eyebrow{font-size:11px;font-weight:700;letter-spacing:2.5px;color:#378260;text-transform:uppercase;margin:0 0 13px}.landing-title{font-size:clamp(27px,4vw,36px);line-height:1.15;margin:0 0 12px;color:#153d2e}.landing-intro{color:var(--muted);font-size:15px;margin:0 0 26px;line-height:1.6}.portal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.portal-card{border:1px solid #e1ebe4;border-radius:20px;padding:23px;background:linear-gradient(145deg,#fff,#fbfdfb);box-shadow:0 7px 22px rgba(22,70,48,.055);display:flex;flex-direction:column;min-height:215px}.portal-heading{display:flex;align-items:center;gap:14px;margin-bottom:18px}.portal-icon{width:54px;height:54px;flex:0 0 auto;border-radius:16px;background:var(--green-soft);color:var(--green);display:grid;place-items:center}.portal-icon svg{width:25px;height:25px}.portal-card h3{font-size:20px;margin:0 0 6px;color:#173e2e}.portal-card p{font-size:13px;line-height:1.55;color:var(--muted);margin:0}.portal-card button{margin-top:auto}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}label{display:block;font-weight:700;font-size:13px;margin:14px 0 7px;color:#294b3a}input,button,select{width:100%;padding:13px 14px;border:1px solid #cbd9cf;border-radius:11px;font-size:15px;font-family:inherit}input,select{background:#fff;color:#193e2d}input:focus,select:focus{outline:3px solid rgba(36,128,83,.13);border-color:#32815a}button{background:var(--green);color:white;border:1px solid var(--green);font-weight:700;cursor:pointer;margin-top:14px;transition:background .15s,transform .15s,box-shadow .15s}button:hover{background:#0d5039;box-shadow:0 5px 14px rgba(18,96,68,.16)}button:active{transform:translateY(1px)}button.secondary{background:#edf5ef;color:#19563d;border-color:#d5e5da}button.secondary:hover{background:#e2efe6}.status{float:none}.muted,small{color:var(--muted)}small{font-size:12px;line-height:1.5}table{width:100%;border-collapse:collapse;min-width:650px}th,td{padding:11px;border-bottom:1px solid #e3ebe5;text-align:left;font-size:13px}th{background:#edf5ef;color:#28523b}.scroll{overflow:auto}.hidden{display:none!important}.msg{padding:12px 14px;border-radius:10px;background:#fff4d6;margin-top:12px;color:#72551a}.danger{background:#fde8e7;color:#9a2118}.stat{font-size:24px;font-weight:750}.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.actions button{flex:1;min-width:130px}.backButton{margin:0 0 10px;max-width:180px}.moduleButton{min-height:64px}#employeeAccess .actions button{margin-top:0}#employeeAccess h2,#adminAccess h2{margin-top:12px;color:#173e2e}.wrap>p.muted{text-align:center;font-size:12px;margin:26px auto 0;max-width:620px}.footer-credit{text-align:center;color:#64776b;font-size:10px;margin:28px 0 0;line-height:1.7}.footer-credit .footer-title{display:block;font-weight:700}.footer-credit .footer-meta{display:block;font-weight:700}.footer-credit .credit-name{font-size:8px;font-weight:600;letter-spacing:.1px}
 @media(max-width:650px){.top{padding:18px 20px;min-height:94px;gap:12px}.brand-mark{width:48px;height:48px;border-radius:14px}.brand-title{font-size:19px}.brand-subtitle{font-size:9px;letter-spacing:1.5px}.status{font-size:10px;padding:6px 9px}.wrap{padding:25px 14px 34px}#landing{padding:26px 20px 22px}.portal-grid{grid-template-columns:1fr;gap:13px}.portal-card{min-height:190px;padding:19px}.card{padding:20px;border-radius:18px}.landing-intro{margin-bottom:20px}.portal-card h3{font-size:19px}}
+
+textarea{width:100%;min-height:110px;padding:13px 14px;border:1px solid #cbd9cf;border-radius:11px;font-size:15px;font-family:inherit;color:#193e2d;resize:vertical}
+.notice-overlay{position:fixed;inset:0;z-index:1000;background:rgba(8,35,24,.62);display:flex;align-items:center;justify-content:center;padding:18px}
+.notice-dialog{width:min(100%,480px);background:#fff;border:1px solid var(--line);border-radius:22px;padding:28px;box-shadow:0 22px 70px rgba(0,0,0,.25)}
+.notice-badge{display:inline-block;padding:6px 10px;border-radius:20px;background:var(--green-soft);color:var(--green);font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase}
+.notice-dialog h2{margin:14px 0 8px;color:#173e2e}.notice-dialog p{line-height:1.6;color:#53675b;white-space:pre-wrap}.notice-dialog .actions{margin-top:18px}.notice-dialog .actions button{margin-top:0}
+
 </style></head><body>
 <header class="top"><div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.5 12 3l8.5 7.5"/><path d="M5.5 9.5V21h13V9.5M9 21v-7h6v7"/></svg></div><div><div class="brand-title">Townsite Housing</div><div class="brand-subtitle">Consumption Monitoring System</div></div><span class="status" id="net">CHECKING</span></header>
 <main class="wrap">
@@ -90,6 +97,21 @@
       <button class="secondary" id="copyCodeBtn" type="button">Copy Code</button>
     </div>
     <button id="resetAccountBtn" class="secondary" type="button">Reset Housing Account</button>
+    <section class="card" id="announcementAdminCard">
+      <h3>Monthly Reading Announcement</h3>
+      <p class="muted">Gumawa ng announcement at i-publish lamang kapag kumpleto at verified na ang readings.</p>
+      <input type="hidden" id="announcementId">
+      <label>Billing Month</label><input id="announcementMonth" placeholder="November 2026" maxlength="40">
+      <label>Announcement Title</label><input id="announcementTitle" placeholder="November 2026 Consumption Update" maxlength="120">
+      <label>Message</label><textarea id="announcementMessage" maxlength="1000" placeholder="Your November electricity and water consumption records are now available. Please log in to view your updated records."></textarea>
+      <div class="actions">
+        <button class="secondary" id="saveAnnouncementDraft" type="button">Save Draft</button>
+        <button id="publishAnnouncement" type="button">Publish Announcement</button>
+        <button class="secondary" id="unpublishAnnouncement" type="button">Unpublish</button>
+      </div>
+      <div id="announcementAdminMsg" class="msg hidden"></div>
+      <small id="announcementCurrentStatus">Status: No announcement yet.</small>
+    </section>
     <div id="adminMsg" class="msg hidden"></div>
     <p class="muted">Paalala: Ang account reset ay hindi nagbubura ng consumption history.</p>
   </div>
@@ -118,6 +140,20 @@
 </section>
 <p class="muted">Offline data is a saved copy from your last successful sync. For the latest readings, connect to the internet and tap Refresh / Sync.</p>
 </main>
+
+<div id="announcementModal" class="notice-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="announcementModalTitle">
+  <div class="notice-dialog">
+    <span class="notice-badge">Townsite Announcement</span>
+    <h2 id="announcementModalTitle">Monthly Consumption Update</h2>
+    <small id="announcementModalMonth"></small>
+    <p id="announcementModalMessage"></p>
+    <div class="actions">
+      <button id="announcementViewRecords" type="button">View My Records</button>
+      <button id="announcementDismiss" class="secondary" type="button">Close</button>
+    </div>
+  </div>
+</div>
+
 <iframe id="gasBridge" title="Secure Apps Script connection" hidden></iframe>
 <script>
 const GAS_URL='https://script.google.com/macros/s/AKfycbx6HkdPdG-jD4poUls6jFkH92irzKGuxje9aUEs5h9_P4yby7Qv4ZTHSykhPXuswYpiMg/exec';
@@ -286,6 +322,43 @@ function render(data, offline = false) {
   }
 }
 
+
+function closeAnnouncementModal(markSeen=true) {
+  const modal=$('announcementModal');
+  const announcementId=modal.dataset.announcementId || '';
+  if(markSeen && announcementId){
+    try{localStorage.setItem('townsiteAnnouncementSeen_'+announcementId,'yes');}catch(e){}
+  }
+  modal.classList.add('hidden');
+}
+
+async function checkPublishedAnnouncement() {
+  if(!online() || !bridgeReady) return;
+  try {
+    const result=await rpc('getPublishedAnnouncement',[]);
+    const a=result && result.success ? result.announcement : null;
+    if(!a || !a.id) return;
+    const seenKey='townsiteAnnouncementSeen_'+a.id;
+    try{if(localStorage.getItem(seenKey)==='yes') return;}catch(e){}
+    $('announcementModalTitle').textContent=a.title || 'Monthly Consumption Update';
+    $('announcementModalMonth').textContent=a.billingMonth || '';
+    $('announcementModalMessage').textContent=a.message || '';
+    $('announcementModal').dataset.announcementId=a.id;
+    $('announcementModal').classList.remove('hidden');
+  } catch(err) {
+    console.warn('Announcement check failed:',err);
+  }
+}
+$('announcementDismiss').addEventListener('click',()=>closeAnnouncementModal(true));
+$('announcementViewRecords').addEventListener('click',()=>{
+  closeAnnouncementModal(true);
+  showModuleMenu();
+  $('portal').scrollIntoView({behavior:'smooth',block:'start'});
+});
+$('announcementModal').addEventListener('click',e=>{
+  if(e.target===$('announcementModal')) closeAnnouncementModal(true);
+});
+
 async function syncData(house) {
   const login = await rpc('verifyHousePIN', [
     house,
@@ -354,7 +427,7 @@ $('openWater').addEventListener('click', () => showModule('water'));
 $('backFromPower').addEventListener('click', showModuleMenu);
 $('backFromWater').addEventListener('click', showModuleMenu);
 
-$('loginForm').addEventListener('submit',async e=>{e.preventDefault();if(!online()){setMsg('loginMsg','Walang internet. Gamitin ang Open Saved Offline Records.',true);return}if(!bridgeReady){setMsg('loginMsg','Hindi pa nakakonekta ang Apps Script Bridge. I-check ang deployment URL.',true);return}const b=$('loginBtn');b.disabled=true;b.textContent='Logging in and syncing...';try{const house=$('house').value.trim();const data=await syncData(house);currentHouse=house;render(data,false);$('pin').value=''}catch(err){setMsg('loginMsg',err.message||'May error sa login.',true)}finally{b.disabled=false;b.textContent='Login and Sync Records'}});
+$('loginForm').addEventListener('submit',async e=>{e.preventDefault();if(!online()){setMsg('loginMsg','Walang internet. Gamitin ang Open Saved Offline Records.',true);return}if(!bridgeReady){setMsg('loginMsg','Hindi pa nakakonekta ang Apps Script Bridge. I-check ang deployment URL.',true);return}const b=$('loginBtn');b.disabled=true;b.textContent='Logging in and syncing...';try{const house=$('house').value.trim();const data=await syncData(house);currentHouse=house;render(data,false);$('pin').value='';checkPublishedAnnouncement()}catch(err){setMsg('loginMsg',err.message||'May error sa login.',true)}finally{b.disabled=false;b.textContent='Login and Sync Records'}});
 $('offlineBtn').addEventListener('click',async()=>{const house=$('house').value.trim();if(!house){setMsg('loginMsg','Ilagay ang House No. para mahanap ang saved records.',true);return}const data=await dbGet('house:'+house);if(!data){setMsg('loginMsg','Walang saved offline records para sa House No. na ito. Mag-login muna habang online.',true);return}currentHouse=house;render(data,true)});
 $('refresh').addEventListener('click',async()=>{if(!online()){setMsg('portalMsg','Walang internet. Offline records lamang ang available.',true);return}try{const data=await syncData(currentHouse);render(data,false)}catch(e){setMsg('portalMsg',e.message,true)}});
 $('logout').addEventListener('click',()=>{currentHouse='';$('portal').classList.add('hidden');$('landing').classList.remove('hidden');$('employeeAccess').classList.add('hidden');$('loginForm').reset();});
@@ -426,8 +499,58 @@ $('adminLoginForm').addEventListener('submit',async e=>{
     $('adminDashboard').classList.remove('hidden');
     $('adminPassword').value='';
     await loadAdminHouses();
+    await loadAdminAnnouncement();
   }catch(err){setMsg('adminLoginMsg',err.message || 'May error sa Admin login.',true);}
   finally{b.disabled=false;b.textContent='Login as Administrator';}
+});
+
+
+async function loadAdminAnnouncement(){
+  const result=await rpc('adminGetAnnouncement',[adminToken]);
+  if(!result || !result.success) throw Error(result?.message || 'Hindi makuha ang announcement.');
+  const a=result.announcement;
+  if(a){
+    $('announcementId').value=a.id || '';
+    $('announcementMonth').value=a.billingMonth || '';
+    $('announcementTitle').value=a.title || '';
+    $('announcementMessage').value=a.message || '';
+    $('announcementCurrentStatus').textContent='Status: '+(a.status || '—')+(a.publishedAt ? ' | Published: '+a.publishedAt : '');
+  }else{
+    $('announcementId').value='';
+    $('announcementMonth').value='';
+    $('announcementTitle').value='';
+    $('announcementMessage').value='';
+    $('announcementCurrentStatus').textContent='Status: No announcement yet.';
+  }
+}
+
+async function saveAnnouncement(status){
+  const month=$('announcementMonth').value.trim();
+  const title=$('announcementTitle').value.trim();
+  const message=$('announcementMessage').value.trim();
+  if(!month || !title || !message){setMsg('announcementAdminMsg','Pakikumpleto ang Billing Month, Title, at Message.',true);return;}
+  const buttons=['saveAnnouncementDraft','publishAnnouncement','unpublishAnnouncement'];
+  buttons.forEach(id=>$(id).disabled=true);
+  try{
+    const result=await rpc('adminSaveAnnouncement',[
+      adminToken,$('announcementId').value,month,title,message,status
+    ]);
+    if(!result || !result.success) throw Error(result?.message || 'Hindi na-save ang announcement.');
+    $('announcementId').value=result.announcement.id;
+    $('announcementCurrentStatus').textContent='Status: '+result.announcement.status+(result.announcement.publishedAt ? ' | Published: '+result.announcement.publishedAt : '');
+    setMsg('announcementAdminMsg',result.message || 'Announcement updated.',false);
+  }catch(err){setMsg('announcementAdminMsg',err.message || 'May error sa announcement.',true);}
+  finally{buttons.forEach(id=>$(id).disabled=false);}
+}
+$('saveAnnouncementDraft').addEventListener('click',()=>saveAnnouncement('DRAFT'));
+$('publishAnnouncement').addEventListener('click',()=>{
+  if(!confirm('I-publish ang announcement? Makikita ito ng employees kapag nag-login sila sa portal.')) return;
+  saveAnnouncement('PUBLISHED');
+});
+$('unpublishAnnouncement').addEventListener('click',()=>{
+  if(!$('announcementId').value){setMsg('announcementAdminMsg','Walang announcement na puwedeng i-unpublish.',true);return;}
+  if(!confirm('Sigurado ka bang i-unpublish ang announcement?')) return;
+  saveAnnouncement('UNPUBLISHED');
 });
 
 async function loadAdminHouses(){
