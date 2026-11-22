@@ -99,8 +99,9 @@ textarea{width:100%;min-height:110px;padding:13px 14px;border:1px solid #cbd9cf;
     <button id="resetAccountBtn" class="secondary" type="button">Reset Housing Account</button>
     <section class="card" id="announcementAdminCard">
       <h3>Monthly Reading Announcement</h3>
-      <p class="muted">Gumawa ng announcement at i-publish lamang kapag kumpleto at verified na ang readings.</p>
+      <p class="muted">Magkahiwalay ang Electricity at Water announcements. I-publish lamang ang bawat isa kapag verified na ang kaukulang readings.</p>
       <input type="hidden" id="announcementId">
+      <label>Reading Type</label><select id="announcementType"><option value="ELECTRICITY">Electricity Consumption</option><option value="WATER">Water Consumption</option></select>
       <label>Billing Month</label><input id="announcementMonth" placeholder="November 2026" maxlength="40">
       <label>Announcement Title</label><input id="announcementTitle" placeholder="November 2026 Consumption Update" maxlength="120">
       <label>Message</label><textarea id="announcementMessage" maxlength="1000" placeholder="Your November electricity and water consumption records are now available. Please log in to view your updated records."></textarea>
@@ -330,27 +331,38 @@ function closeAnnouncementModal(markSeen=true) {
     try{localStorage.setItem('townsiteAnnouncementSeen_'+announcementId,'yes');}catch(e){}
   }
   modal.classList.add('hidden');
+  if(markSeen && Array.isArray(window.pendingTownsiteAnnouncements)) {
+    window.pendingTownsiteAnnouncements.shift();
+    setTimeout(showNextTownsiteAnnouncement,150);
+  }
 }
 
 async function checkPublishedAnnouncement() {
   if(!online() || !bridgeReady) return;
   try {
-    const result=await rpc('getPublishedAnnouncement',[]);
-    const a=result && result.success ? result.announcement : null;
-    if(!a || !a.id) return;
-    const seenKey='townsiteAnnouncementSeen_'+a.id;
-    try{if(localStorage.getItem(seenKey)==='yes') return;}catch(e){}
-    $('announcementModalTitle').textContent=a.title || 'Monthly Consumption Update';
-    $('announcementModalMonth').textContent=a.billingMonth || '';
-    $('announcementModalMessage').textContent=a.message || '';
-    $('announcementModal').dataset.announcementId=a.id;
-    $('announcementModal').classList.remove('hidden');
+    const result=await rpc('getPublishedAnnouncements',[]);
+    const list=result && result.success && Array.isArray(result.announcements) ? result.announcements : [];
+    const unseen=list.filter(a=>a && a.id && !localStorage.getItem('townsiteAnnouncementSeen_'+a.id));
+    if(!unseen.length) return;
+    window.pendingTownsiteAnnouncements=unseen;
+    showNextTownsiteAnnouncement();
   } catch(err) {
     console.warn('Announcement check failed:',err);
   }
 }
+function showNextTownsiteAnnouncement(){
+  const queue=window.pendingTownsiteAnnouncements || [];
+  if(!queue.length) return;
+  const a=queue[0];
+  $('announcementModalTitle').textContent=a.title || (a.readingType==='WATER' ? 'Water Consumption Update' : 'Electricity Consumption Update');
+  $('announcementModalMonth').textContent=(a.billingMonth || '')+' • '+(a.readingType==='WATER' ? 'Water' : 'Electricity');
+  $('announcementModalMessage').textContent=a.message || '';
+  $('announcementModal').dataset.announcementId=a.id;
+  $('announcementModal').classList.remove('hidden');
+}
 $('announcementDismiss').addEventListener('click',()=>closeAnnouncementModal(true));
 $('announcementViewRecords').addEventListener('click',()=>{
+  window.pendingTownsiteAnnouncements=[];
   closeAnnouncementModal(true);
   showModuleMenu();
   $('portal').scrollIntoView({behavior:'smooth',block:'start'});
@@ -506,7 +518,8 @@ $('adminLoginForm').addEventListener('submit',async e=>{
 
 
 async function loadAdminAnnouncement(){
-  const result=await rpc('adminGetAnnouncement',[adminToken]);
+  const type=$('announcementType').value;
+  const result=await rpc('adminGetAnnouncement',[adminToken,type]);
   if(!result || !result.success) throw Error(result?.message || 'Hindi makuha ang announcement.');
   const a=result.announcement;
   if(a){
@@ -514,17 +527,18 @@ async function loadAdminAnnouncement(){
     $('announcementMonth').value=a.billingMonth || '';
     $('announcementTitle').value=a.title || '';
     $('announcementMessage').value=a.message || '';
-    $('announcementCurrentStatus').textContent='Status: '+(a.status || '—')+(a.publishedAt ? ' | Published: '+a.publishedAt : '');
+    $('announcementCurrentStatus').textContent=type+' Status: '+(a.status || '—')+(a.publishedAt ? ' | Published: '+a.publishedAt : '');
   }else{
     $('announcementId').value='';
     $('announcementMonth').value='';
     $('announcementTitle').value='';
     $('announcementMessage').value='';
-    $('announcementCurrentStatus').textContent='Status: No announcement yet.';
+    $('announcementCurrentStatus').textContent=type+': No announcement yet.';
   }
 }
 
 async function saveAnnouncement(status){
+  const type=$('announcementType').value;
   const month=$('announcementMonth').value.trim();
   const title=$('announcementTitle').value.trim();
   const message=$('announcementMessage').value.trim();
@@ -533,7 +547,7 @@ async function saveAnnouncement(status){
   buttons.forEach(id=>$(id).disabled=true);
   try{
     const result=await rpc('adminSaveAnnouncement',[
-      adminToken,$('announcementId').value,month,title,message,status
+      adminToken,$('announcementId').value,month,title,message,status,type
     ]);
     if(!result || !result.success) throw Error(result?.message || 'Hindi na-save ang announcement.');
     $('announcementId').value=result.announcement.id;
@@ -542,6 +556,7 @@ async function saveAnnouncement(status){
   }catch(err){setMsg('announcementAdminMsg',err.message || 'May error sa announcement.',true);}
   finally{buttons.forEach(id=>$(id).disabled=false);}
 }
+$('announcementType').addEventListener('change',()=>loadAdminAnnouncement().catch(err=>setMsg('announcementAdminMsg',err.message,true)));
 $('saveAnnouncementDraft').addEventListener('click',()=>saveAnnouncement('DRAFT'));
 $('publishAnnouncement').addEventListener('click',()=>{
   if(!confirm('I-publish ang announcement? Makikita ito ng employees kapag nag-login sila sa portal.')) return;
