@@ -1,16 +1,32 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#145239"><link rel="manifest" href="./manifest.json"><title>Townsite Housing Portal</title>
 <style>
-:root{font-family:Arial,sans-serif;color:#173b2b;background:#f3f7f4}*{box-sizing:border-box}body{margin:0}.top{background:#145239;color:white;padding:20px 5vw}.wrap{max-width:1050px;margin:28px auto;padding:0 16px}.card{background:white;border:1px solid #dce8df;border-radius:16px;padding:22px;margin:14px 0;box-shadow:0 8px 25px #1234}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}label{display:block;font-weight:bold;margin:12px 0 6px}input,button,select{width:100%;padding:12px;border:1px solid #cbd9cf;border-radius:9px;font-size:16px}button{background:#176843;color:white;border:0;font-weight:bold;cursor:pointer;margin-top:14px}button.secondary{background:#e7f3eb;color:#145239}.status{float:right;border-radius:20px;padding:6px 10px;background:#e7f3eb;color:#145239;font-size:12px}small,.muted{color:#63756a}table{width:100%;border-collapse:collapse;min-width:650px}th,td{padding:9px;border-bottom:1px solid #e3ebe5;text-align:left;font-size:13px}th{background:#edf5ef}.scroll{overflow:auto}.hidden{display:none}.msg{padding:10px;border-radius:8px;background:#fff4d6;margin-top:12px}.danger{background:#fde8e7;color:#9a2118}.stat{font-size:24px;font-weight:bold}.actions{display:flex;gap:10px;flex-wrap:wrap}.actions button{flex:1;min-width:130px}
+:root{font-family:Arial,sans-serif;color:#173b2b;background:#f3f7f4}*{box-sizing:border-box}body{margin:0}.top{background:#145239;color:white;padding:20px 5vw}.wrap{max-width:1050px;margin:28px auto;padding:0 16px}.card{background:white;border:1px solid #dce8df;border-radius:16px;padding:22px;margin:14px 0;box-shadow:0 8px 25px #1234}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}label{display:block;font-weight:bold;margin:12px 0 6px}input,button,select{width:100%;padding:12px;border:1px solid #cbd9cf;border-radius:9px;font-size:16px}button{background:#176843;color:white;border:0;font-weight:bold;cursor:pointer;margin-top:14px}button.secondary{background:#e7f3eb;color:#145239}.status{float:right;border-radius:20px;padding:6px 10px;background:#e7f3eb;color:#145239;font-size:12px}small,.muted{color:#63756a}table{width:100%;border-collapse:collapse;min-width:650px}th,td{padding:9px;border-bottom:1px solid #e3ebe5;text-align:left;font-size:13px}th{background:#edf5ef}.scroll{overflow:auto}.hidden{display:none}.msg{padding:10px;border-radius:8px;background:#fff4d6;margin-top:12px}.danger{background:#fde8e7;color:#9a2118}.stat{font-size:24px;font-weight:bold}.actions{display:flex;gap:10px;flex-wrap:wrap}.actions button{flex:1;min-width:130px}.backButton{margin:0 0 10px}.moduleButton{min-height:64px}
 </style></head><body>
 <header class="top"><span class="status" id="net">CHECKING</span><h2>Townsite Housing</h2><div>Power & Water Consumption Portal</div></header>
 <main class="wrap">
 <section class="card" id="loginCard"><h2>Employee Login</h2><p class="muted">Gamitin ang existing housing account mo.</p><form id="loginForm"><label>House No.</label><input id="house" required autocomplete="username"><label>Employee Code</label><input id="employee" required><label>PIN (8–12 digits)</label><input id="pin" type="password" inputmode="numeric" pattern="[0-9]{8,12}" minlength="8" maxlength="12" required autocomplete="current-password"><button id="loginBtn">Login and Sync Records</button></form><div id="loginMsg" class="msg hidden"></div><button class="secondary" id="offlineBtn" type="button">Open Saved Offline Records</button><small>Offline mode is read-only and only works on this device/browser after a successful online sync.</small></section>
 <section id="portal" class="hidden">
 <div class="card"><div class="actions"><div style="flex:2"><h2 id="account">Housing account</h2><small id="syncTime">Not synced</small></div><button class="secondary" id="refresh">Refresh / Sync</button><button class="secondary" id="logout">Logout</button></div><div id="portalMsg" class="msg hidden"></div></div>
-<div class="card"><h2>Power Consumption</h2><div class="grid"><div><small>Billing Period</small><div class="stat" id="pPeriod">—</div></div><div><small>Consumption</small><div class="stat" id="pCons">—</div></div><div><small>Allocation</small><div class="stat" id="pAlloc">—</div></div><div><small>Excess</small><div class="stat" id="pExcess">—</div></div></div><p id="pStatus"></p><h3>Power History</h3><div class="scroll"><table id="powerTable"></table></div></div><h3>Power Cut-off Schedule</h3>
-<div class="scroll"> <table id="powerCutoffTable"></table> </div>
-<div class="card"><h2>Water Consumption</h2><div class="grid"><div><small>Billing Period</small><div class="stat" id="wPeriod">—</div></div><div><small>Consumption</small><div class="stat" id="wCons">—</div></div><div><small>Allocation</small><div class="stat" id="wAlloc">—</div></div><div><small>Excess</small><div class="stat" id="wExcess">—</div></div></div><p id="wStatus"></p><h3>Water History</h3><div class="scroll"><table id="waterTable"></table></div><h3>Water Cut-off Schedule</h3><div class="scroll"><table id="waterCutoffTable"></table></div></div>
+
+<section id="moduleMenu" class="card">
+  <h2>Choose Consumption Record</h2>
+  <p class="muted">Piliin kung anong record ang nais mong tingnan.</p>
+  <button id="openPower" type="button">⚡ Power Consumption</button>
+  <button id="openWater" class="secondary" type="button">💧 Water Consumption</button>
+</section>
+
+<section id="powerView" class="hidden">
+  <button class="secondary backButton" id="backFromPower" type="button">← Back to Selection</button>
+  <div class="card"><h2>Power Consumption</h2><div class="grid"><div><small>Billing Period</small><div class="stat" id="pPeriod">—</div></div><div><small>Consumption</small><div class="stat" id="pCons">—</div></div><div><small>Allocation</small><div class="stat" id="pAlloc">—</div></div><div><small>Excess</small><div class="stat" id="pExcess">—</div></div></div><p id="pStatus"></p><h3>Power History</h3><div class="scroll"><table id="powerTable"></table></div></div>
+  <div class="card"><h3>Power Cut-off Schedule</h3><div class="scroll"><table id="powerCutoffTable"></table></div></div>
+</section>
+
+<section id="waterView" class="hidden">
+  <button class="secondary backButton" id="backFromWater" type="button">← Back to Selection</button>
+  <div class="card"><h2>Water Consumption</h2><div class="grid"><div><small>Billing Period</small><div class="stat" id="wPeriod">—</div></div><div><small>Consumption</small><div class="stat" id="wCons">—</div></div><div><small>Allocation</small><div class="stat" id="wAlloc">—</div></div><div><small>Excess</small><div class="stat" id="wExcess">—</div></div></div><p id="wStatus"></p><h3>Water History</h3><div class="scroll"><table id="waterTable"></table></div></div>
+  <div class="card"><h3>Water Cut-off Schedule</h3><div class="scroll"><table id="waterCutoffTable"></table></div></div>
+</section>
 </section>
 <p class="muted">Offline data is a saved copy from your last successful sync. For the latest readings, connect to the internet and tap Refresh / Sync.</p>
 </main>
@@ -133,9 +149,20 @@ function drawCutoff(id, rows) {
 
   drawTable(id, headers, tableRows);
 }
+function showModuleMenu() {
+  $('moduleMenu').classList.remove('hidden');
+  $('powerView').classList.add('hidden');
+  $('waterView').classList.add('hidden');
+}
+function showModule(module) {
+  $('moduleMenu').classList.add('hidden');
+  $('powerView').classList.toggle('hidden', module !== 'power');
+  $('waterView').classList.toggle('hidden', module !== 'water');
+}
 function render(data, offline = false) {
   $('loginCard').classList.add('hidden');
   $('portal').classList.remove('hidden');
+  showModuleMenu();
 
   $('account').textContent = 'House No.: ' + data.houseNo;
   $('syncTime').textContent = (offline ? 'Offline saved copy • ' : 'Last sync: ') + (data.savedAt || '');
@@ -234,6 +261,11 @@ async function syncData(house) {
     throw err;
   }
 }
+$('openPower').addEventListener('click', () => showModule('power'));
+$('openWater').addEventListener('click', () => showModule('water'));
+$('backFromPower').addEventListener('click', showModuleMenu);
+$('backFromWater').addEventListener('click', showModuleMenu);
+
 $('loginForm').addEventListener('submit',async e=>{e.preventDefault();if(!online()){setMsg('loginMsg','Walang internet. Gamitin ang Open Saved Offline Records.',true);return}if(!bridgeReady){setMsg('loginMsg','Hindi pa nakakonekta ang Apps Script Bridge. I-check ang deployment URL.',true);return}const b=$('loginBtn');b.disabled=true;b.textContent='Logging in and syncing...';try{const house=$('house').value.trim();const data=await syncData(house);currentHouse=house;render(data,false);$('pin').value=''}catch(err){setMsg('loginMsg',err.message||'May error sa login.',true)}finally{b.disabled=false;b.textContent='Login and Sync Records'}});
 $('offlineBtn').addEventListener('click',async()=>{const house=$('house').value.trim();if(!house){setMsg('loginMsg','Ilagay ang House No. para mahanap ang saved records.',true);return}const data=await dbGet('house:'+house);if(!data){setMsg('loginMsg','Walang saved offline records para sa House No. na ito. Mag-login muna habang online.',true);return}currentHouse=house;render(data,true)});
 $('refresh').addEventListener('click',async()=>{if(!online()){setMsg('portalMsg','Walang internet. Offline records lamang ang available.',true);return}try{const data=await syncData(currentHouse);render(data,false)}catch(e){setMsg('portalMsg',e.message,true)}});
