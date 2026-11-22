@@ -5,7 +5,78 @@
 </style></head><body>
 <header class="top"><span class="status" id="net">CHECKING</span><h2>Townsite Housing</h2><div>Power & Water Consumption Portal</div></header>
 <main class="wrap">
-<section class="card" id="loginCard"><h2>Employee Login</h2><p class="muted">Gamitin ang existing housing account mo.</p><form id="loginForm"><label>House No.</label><input id="house" required autocomplete="username"><label>Employee Code</label><input id="employee" required><label>PIN (8–12 digits)</label><input id="pin" type="password" inputmode="numeric" pattern="[0-9]{8,12}" minlength="8" maxlength="12" required autocomplete="current-password"><button id="loginBtn">Login and Sync Records</button></form><div id="loginMsg" class="msg hidden"></div><button class="secondary" id="offlineBtn" type="button">Open Saved Offline Records</button><small>Offline mode is read-only and only works on this device/browser after a successful online sync.</small></section>
+<section class="card" id="landing">
+  <h2>Welcome to Townsite Housing Portal</h2>
+  <p class="muted">Piliin ang portal na nais buksan.</p>
+  <button id="employeePortalBtn" type="button">Employee Portal</button>
+  <button id="adminPortalBtn" class="secondary" type="button">Administrator Portal</button>
+</section>
+
+<section class="card hidden" id="employeeAccess">
+  <button class="secondary backButton" id="backLandingFromEmployee" type="button">← Back</button>
+  <div class="actions">
+    <button id="showEmployeeLogin" type="button">Employee Login</button>
+    <button id="showEmployeeRegister" class="secondary" type="button">Register Account</button>
+  </div>
+  <div id="employeeLoginPanel">
+    <h2>Employee Login</h2>
+    <p class="muted">Gamitin ang existing housing account mo.</p>
+    <form id="loginForm">
+      <label>House No.</label><input id="house" required autocomplete="username">
+      <label>Employee Code</label><input id="employee" required>
+      <label>PIN (8–12 digits)</label><input id="pin" type="password" inputmode="numeric" pattern="[0-9]{8,12}" minlength="8" maxlength="12" required autocomplete="current-password">
+      <button id="loginBtn">Login and Sync Records</button>
+    </form>
+    <div id="loginMsg" class="msg hidden"></div>
+    <button class="secondary" id="offlineBtn" type="button">Open Saved Offline Records</button>
+    <small>Offline mode is read-only and only works on this device/browser after a successful online sync.</small>
+  </div>
+  <div id="employeeRegisterPanel" class="hidden">
+    <h2>Register Housing Account</h2>
+    <p class="muted">Kailangan ang Registration Code na ibinigay ng Administrator.</p>
+    <form id="registerForm">
+      <label>House No.</label><input id="regHouse" required>
+      <label>Employee Code</label><input id="regEmployee" required>
+      <label>Registration Code</label><input id="regCode" required autocomplete="off">
+      <label>Create PIN (8–12 digits)</label><input id="regPin" type="password" inputmode="numeric" pattern="[0-9]{8,12}" minlength="8" maxlength="12" required>
+      <label>Confirm PIN</label><input id="regPinConfirm" type="password" inputmode="numeric" pattern="[0-9]{8,12}" minlength="8" maxlength="12" required>
+      <button id="registerBtn">Create Account</button>
+    </form>
+    <div id="registerMsg" class="msg hidden"></div>
+  </div>
+</section>
+
+<section class="card hidden" id="adminAccess">
+  <button class="secondary backButton" id="backLandingFromAdmin" type="button">← Back</button>
+  <div id="adminLoginPanel">
+    <h2>Administrator Login</h2>
+    <form id="adminLoginForm">
+      <label>Admin Username</label><input id="adminUsername" required autocomplete="username">
+      <label>Admin Password</label><input id="adminPassword" type="password" required autocomplete="current-password">
+      <button id="adminLoginBtn">Login as Administrator</button>
+    </form>
+    <div id="adminLoginMsg" class="msg hidden"></div>
+  </div>
+  <div id="adminDashboard" class="hidden">
+    <div class="actions">
+      <div style="flex:2"><h2>Administrator Portal</h2><small>Housing Account Management</small></div>
+      <button class="secondary" id="adminRefresh" type="button">Refresh List</button>
+      <button class="secondary" id="adminLogout" type="button">Logout</button>
+    </div>
+    <label>Select Housing Unit</label>
+    <select id="adminHouse"><option value="">Loading housing units...</option></select>
+    <button id="generateCodeBtn" type="button">Generate Registration Code</button>
+    <div id="generatedCodeBox" class="msg hidden">
+      <strong>Registration Code:</strong>
+      <div class="stat" id="generatedCode" style="word-break:break-all"></div>
+      <small id="codeExpiry"></small>
+      <button class="secondary" id="copyCodeBtn" type="button">Copy Code</button>
+    </div>
+    <button id="resetAccountBtn" class="secondary" type="button">Reset Housing Account</button>
+    <div id="adminMsg" class="msg hidden"></div>
+    <p class="muted">Paalala: Ang account reset ay hindi nagbubura ng consumption history.</p>
+  </div>
+</section>
 <section id="portal" class="hidden">
 <div class="card"><div class="actions"><div style="flex:2"><h2 id="account">Housing account</h2><small id="syncTime">Not synced</small></div><button class="secondary" id="refresh">Refresh / Sync</button><button class="secondary" id="logout">Logout</button></div><div id="portalMsg" class="msg hidden"></div></div>
 
@@ -269,6 +340,137 @@ $('backFromWater').addEventListener('click', showModuleMenu);
 $('loginForm').addEventListener('submit',async e=>{e.preventDefault();if(!online()){setMsg('loginMsg','Walang internet. Gamitin ang Open Saved Offline Records.',true);return}if(!bridgeReady){setMsg('loginMsg','Hindi pa nakakonekta ang Apps Script Bridge. I-check ang deployment URL.',true);return}const b=$('loginBtn');b.disabled=true;b.textContent='Logging in and syncing...';try{const house=$('house').value.trim();const data=await syncData(house);currentHouse=house;render(data,false);$('pin').value=''}catch(err){setMsg('loginMsg',err.message||'May error sa login.',true)}finally{b.disabled=false;b.textContent='Login and Sync Records'}});
 $('offlineBtn').addEventListener('click',async()=>{const house=$('house').value.trim();if(!house){setMsg('loginMsg','Ilagay ang House No. para mahanap ang saved records.',true);return}const data=await dbGet('house:'+house);if(!data){setMsg('loginMsg','Walang saved offline records para sa House No. na ito. Mag-login muna habang online.',true);return}currentHouse=house;render(data,true)});
 $('refresh').addEventListener('click',async()=>{if(!online()){setMsg('portalMsg','Walang internet. Offline records lamang ang available.',true);return}try{const data=await syncData(currentHouse);render(data,false)}catch(e){setMsg('portalMsg',e.message,true)}});
-$('logout').addEventListener('click',()=>{currentHouse='';$('portal').classList.add('hidden');$('loginCard').classList.remove('hidden');$('loginForm').reset()});
+$('logout').addEventListener('click',()=>{currentHouse='';$('portal').classList.add('hidden');$('landing').classList.remove('hidden');$('employeeAccess').classList.add('hidden');$('loginForm').reset();});
+
+let adminToken = '';
+
+function showLanding() {
+  $('landing').classList.remove('hidden');
+  $('employeeAccess').classList.add('hidden');
+  $('adminAccess').classList.add('hidden');
+  $('portal').classList.add('hidden');
+}
+$('employeePortalBtn').addEventListener('click',()=>{
+  $('landing').classList.add('hidden');
+  $('adminAccess').classList.add('hidden');
+  $('employeeAccess').classList.remove('hidden');
+  $('employeeLoginPanel').classList.remove('hidden');
+  $('employeeRegisterPanel').classList.add('hidden');
+});
+$('adminPortalBtn').addEventListener('click',()=>{
+  $('landing').classList.add('hidden');
+  $('employeeAccess').classList.add('hidden');
+  $('adminAccess').classList.remove('hidden');
+});
+$('backLandingFromEmployee').addEventListener('click',showLanding);
+$('backLandingFromAdmin').addEventListener('click',showLanding);
+$('showEmployeeLogin').addEventListener('click',()=>{
+  $('employeeLoginPanel').classList.remove('hidden');
+  $('employeeRegisterPanel').classList.add('hidden');
+});
+$('showEmployeeRegister').addEventListener('click',()=>{
+  $('employeeLoginPanel').classList.add('hidden');
+  $('employeeRegisterPanel').classList.remove('hidden');
+});
+
+$('registerForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  if(!online()){setMsg('registerMsg','Kailangan ng internet para mag-register.',true);return;}
+  if(!bridgeReady){setMsg('registerMsg','Hindi pa nakakonekta ang Apps Script Bridge.',true);return;}
+  const pin=$('regPin').value;
+  if(pin!==$('regPinConfirm').value){setMsg('registerMsg','Hindi magkapareho ang PIN at Confirm PIN.',true);return;}
+  const b=$('registerBtn');b.disabled=true;b.textContent='Registering...';
+  try{
+    const result=await rpc('registerOccupant',[
+      $('regHouse').value.trim(),
+      $('regEmployee').value.trim(),
+      $('regCode').value.trim(),
+      pin
+    ]);
+    if(!result || !result.success) throw Error(result?.message || 'Hindi nagtagumpay ang registration.');
+    setMsg('registerMsg',result.message || 'Matagumpay ang registration.',false);
+    $('registerForm').reset();
+    $('employeeLoginPanel').classList.remove('hidden');
+    $('employeeRegisterPanel').classList.add('hidden');
+  }catch(err){setMsg('registerMsg',err.message || 'May error sa registration.',true);}
+  finally{b.disabled=false;b.textContent='Create Account';}
+});
+
+$('adminLoginForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  if(!online()){setMsg('adminLoginMsg','Kailangan ng internet para sa Administrator Portal.',true);return;}
+  if(!bridgeReady){setMsg('adminLoginMsg','Hindi pa nakakonekta ang Apps Script Bridge.',true);return;}
+  const b=$('adminLoginBtn');b.disabled=true;b.textContent='Checking...';
+  try{
+    const result=await rpc('adminLogin',[$('adminUsername').value.trim(),$('adminPassword').value]);
+    if(!result || !result.success) throw Error(result?.message || 'Hindi tama ang Admin login.');
+    adminToken=result.token;
+    $('adminLoginPanel').classList.add('hidden');
+    $('adminDashboard').classList.remove('hidden');
+    $('adminPassword').value='';
+    await loadAdminHouses();
+  }catch(err){setMsg('adminLoginMsg',err.message || 'May error sa Admin login.',true);}
+  finally{b.disabled=false;b.textContent='Login as Administrator';}
+});
+
+async function loadAdminHouses(){
+  const result=await rpc('adminGetHouses',[adminToken]);
+  if(!result || !result.success) throw Error(result?.message || 'Hindi makuha ang housing list.');
+  const select=$('adminHouse');select.replaceChildren();
+  const first=document.createElement('option');first.value='';first.textContent='Select House No.';select.append(first);
+  (result.houses || []).forEach(h=>{
+    const option=document.createElement('option');
+    option.value=h.houseNo;
+    option.textContent=h.houseNo + (h.occupant ? ' — ' + h.occupant : '');
+    select.append(option);
+  });
+  if(!(result.houses || []).length) setMsg('adminMsg','Walang active housing units na nakita.',false);
+}
+$('adminRefresh').addEventListener('click',async()=>{
+  try{await loadAdminHouses();setMsg('adminMsg','Housing list updated.',false);}
+  catch(err){setMsg('adminMsg',err.message,true);}
+});
+$('generateCodeBtn').addEventListener('click',async()=>{
+  const house=$('adminHouse').value;
+  if(!house){setMsg('adminMsg','Pumili muna ng House No.',true);return;}
+  const b=$('generateCodeBtn');b.disabled=true;b.textContent='Generating...';
+  try{
+    const result=await rpc('adminGenerateRegistrationCode',[adminToken,house]);
+    if(!result || !result.success) throw Error(result?.message || 'Hindi nakagawa ng registration code.');
+    $('generatedCode').textContent=result.code;
+    $('codeExpiry').textContent='House No.: '+result.houseNo+' • Expires: '+result.expires;
+    $('generatedCodeBox').classList.remove('hidden');
+    setMsg('adminMsg','Registration code generated. Ibigay ito nang pribado sa occupant.',false);
+  }catch(err){setMsg('adminMsg',err.message,true);}
+  finally{b.disabled=false;b.textContent='Generate Registration Code';}
+});
+$('copyCodeBtn').addEventListener('click',async()=>{
+  const code=$('generatedCode').textContent;
+  try{await navigator.clipboard.writeText(code);setMsg('adminMsg','Registration code copied.',false);}
+  catch(err){setMsg('adminMsg','Hindi makopya automatically. Piliin at kopyahin ang code.',true);}
+});
+$('resetAccountBtn').addEventListener('click',async()=>{
+  const house=$('adminHouse').value;
+  if(!house){setMsg('adminMsg','Pumili muna ng House No.',true);return;}
+  if(!confirm('Sigurado ka bang i-reset ang housing account ng '+house+'? Hindi mabubura ang consumption history.')) return;
+  const b=$('resetAccountBtn');b.disabled=true;b.textContent='Resetting...';
+  try{
+    const result=await rpc('adminResetHousingAccount',[adminToken,house]);
+    if(!result || !result.success) throw Error(result?.message || 'Hindi na-reset ang account.');
+    $('generatedCodeBox').classList.add('hidden');
+    setMsg('adminMsg',result.message || 'Housing account reset.',false);
+  }catch(err){setMsg('adminMsg',err.message,true);}
+  finally{b.disabled=false;b.textContent='Reset Housing Account';}
+});
+$('adminLogout').addEventListener('click',async()=>{
+  try{if(adminToken) await rpc('adminLogout',[adminToken]);}catch(e){}
+  adminToken='';
+  $('adminDashboard').classList.add('hidden');
+  $('adminLoginPanel').classList.remove('hidden');
+  $('adminLoginForm').reset();
+  $('generatedCodeBox').classList.add('hidden');
+  showLanding();
+});
+
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));startBridge();
 </script></body></html>
