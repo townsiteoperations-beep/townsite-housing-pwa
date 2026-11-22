@@ -97,6 +97,22 @@ textarea{width:100%;min-height:110px;padding:13px 14px;border:1px solid #cbd9cf;
       <button class="secondary" id="copyCodeBtn" type="button">Copy Code</button>
     </div>
     <button id="resetAccountBtn" class="secondary" type="button">Reset Housing Account</button>
+    <section class="card" id="occupancyAdminCard">
+      <h3>Housing Occupancy Management</h3>
+      <p class="muted">Palitan ang occupant o i-transfer ang employee sa ibang housing unit. Nananatili ang dating occupancy at consumption history.</p>
+      <button class="secondary" id="initializeOccupancyBtn" type="button">Initialize Existing Occupants (September 1, 2026)</button>
+      <label>Transaction Type</label>
+      <select id="occupancyAction"><option value="REPLACE">Replace Occupant</option><option value="TRANSFER">Transfer Unit</option></select>
+      <label>Current / Source Housing Unit</label><select id="occupancySource"><option value="">Select source unit</option></select>
+      <div id="occupancyDestinationWrap" class="hidden"><label>Destination Housing Unit</label><select id="occupancyDestination"><option value="">Select destination unit</option></select></div>
+      <label>New Occupant Name</label><input id="occupancyNewName" maxlength="120" placeholder="Full name">
+      <label>New Employee Code</label><input id="occupancyNewEmployee" maxlength="40" placeholder="Employee Code">
+      <label>Company</label><input id="occupancyNewCompany" maxlength="80" placeholder="Company">
+      <label>Effective Date / Date Occupied</label><input id="occupancyEffectiveDate" type="date">
+      <button id="processOccupancyBtn" type="button">Process Occupancy Transaction</button>
+      <div id="occupancyResult" class="msg hidden"></div>
+      <small>Important: I-initialize muna ang existing occupants bago mag-process ng replacement o transfer. Initial reference date: September 1, 2026.</small>
+    </section>
     <section class="card" id="announcementAdminCard">
       <h3>Monthly Reading Announcement</h3>
       <p class="muted">Magkahiwalay ang Electricity at Water announcements. I-publish lamang ang bawat isa kapag verified na ang kaukulang readings.</p>
@@ -634,6 +650,38 @@ $('resetAccountBtn').addEventListener('click',async()=>{
   }catch(err){setMsg('adminMsg',err.message,true);}
   finally{b.disabled=false;b.textContent='Reset Housing Account';}
 });
+
+
+function populateOccupancyUnitLists(){
+  const source=$('occupancySource'), dest=$('occupancyDestination');
+  [source,dest].forEach(sel=>{const keep=sel.value;sel.replaceChildren();const op=document.createElement('option');op.value='';op.textContent='Select housing unit';sel.append(op);(adminHouseData||[]).forEach(h=>{const o=document.createElement('option');o.value=h.houseNo;o.textContent=h.houseNo+(h.occupant?' — '+h.occupant:' (Vacant)');sel.append(o);});if(keep)sel.value=keep;});
+}
+let adminHouseData=[];
+const originalLoadAdminHouses=loadAdminHouses;
+loadAdminHouses=async function(){await originalLoadAdminHouses();const r=await rpc('adminGetHouses',[adminToken]);adminHouseData=r.houses||[];populateOccupancyUnitLists();};
+$('occupancyAction').addEventListener('change',()=>{$('occupancyDestinationWrap').classList.toggle('hidden',$('occupancyAction').value!=='TRANSFER');});
+$('initializeOccupancyBtn').addEventListener('click',async()=>{
+  if(!confirm('Ise-set ang Date Occupied ng lahat ng existing active occupants na walang date sa September 1, 2026 at gagawa ng initial occupancy history. Ituloy?'))return;
+  const b=$('initializeOccupancyBtn');b.disabled=true;b.textContent='Initializing...';
+  try{const r=await rpc('adminInitializeOccupancy',[adminToken]);if(!r||!r.success)throw Error(r?.message||'Initialization failed.');setMsg('occupancyResult',r.message+' Updated: '+r.updated+'; History added: '+r.historyAdded,false);}
+  catch(e){setMsg('occupancyResult',e.message,true);}finally{b.disabled=false;b.textContent='Initialize Existing Occupants (September 1, 2026)';}
+});
+$('processOccupancyBtn').addEventListener('click',async()=>{
+  const action=$('occupancyAction').value, source=$('occupancySource').value, dest=$('occupancyDestination').value;
+  const name=$('occupancyNewName').value.trim(), emp=$('occupancyNewEmployee').value.trim(), company=$('occupancyNewCompany').value.trim(), date=$('occupancyEffectiveDate').value;
+  if(!source||!name||!emp||!date||(action==='TRANSFER'&&!dest)){setMsg('occupancyResult','Pakikumpleto ang lahat ng kinakailangang field.',true);return;}
+  const promptText=action==='TRANSFER'?'I-transfer ang occupant mula '+source+' papuntang '+dest+'?':'Palitan ang current occupant ng '+source+'?';
+  if(!confirm(promptText+' Ang dating account ay mare-reset at gagawa ng bagong Registration Code.'))return;
+  const b=$('processOccupancyBtn');b.disabled=true;b.textContent='Processing...';
+  try{
+    const r=await rpc('adminManageOccupancy',[adminToken,action,source,dest,name,emp,company,date]);
+    if(!r||!r.success)throw Error(r?.message||'Hindi natapos ang occupancy transaction.');
+    $('occupancyResult').innerHTML='';
+    const strong=document.createElement('strong');strong.textContent=r.message;const br=document.createElement('br');const label=document.createTextNode('House No.: '+r.houseNo+' | New Registration Code: ');const code=document.createElement('strong');code.textContent=r.registrationCode;const expiry=document.createElement('div');expiry.textContent='Expires: '+r.expires;$('occupancyResult').append(strong,br,label,code,expiry);$('occupancyResult').classList.remove('hidden');
+    $('occupancyNewName').value='';$('occupancyNewEmployee').value='';$('occupancyNewCompany').value='';await loadAdminHouses();
+  }catch(e){setMsg('occupancyResult',e.message,true);}finally{b.disabled=false;b.textContent='Process Occupancy Transaction';}
+});
+
 $('adminLogout').addEventListener('click',async()=>{
   try{if(adminToken) await rpc('adminLogout',[adminToken]);}catch(e){}
   adminToken='';
