@@ -220,52 +220,50 @@ function rpc(method, args) {
   });
 }
 window.addEventListener('message', e => {
-  // Tanggapin lamang ang mensaheng galing sa mismong Apps Script iframe.
-  // Hindi natin dapat iasa sa iisang hostname ang origin dahil maaaring
-  // mag-redirect ang Apps Script sa script.google.com o googleusercontent.com.
-  const frame = $('gasBridge');
-  if (!frame || e.source !== frame.contentWindow) return;
 
-  const validGoogleOrigin =
-    e.origin === 'https://script.google.com' ||
-    e.origin === 'https://script.googleusercontent.com' ||
-    e.origin.endsWith('.script.googleusercontent.com') ||
-    e.origin.endsWith('.googleusercontent.com');
-  if (!validGoogleOrigin) return;
+  // Accept only Google Apps Script messages
+  if (!e.origin.endsWith('.googleusercontent.com')) {
+    return;
+  }
 
   const d = e.data || {};
+
+  // Capture the actual Bridge window
   if (d.type === 'TOWNSITE_BRIDGE_READY') {
+
     bridgeWindow = e.source;
     bridgeReady = true;
-    console.log('Townsite Bridge Connected!', e.origin);
+
+    console.log('Townsite Bridge Connected!');
     console.log('Bridge Ready:', bridgeReady);
+
     return;
   }
 
-  if (e.source !== bridgeWindow) return;
-  if (d.type === 'TOWNSITE_RPC_RESULT' && pending.has(String(d.id))) {
+  // Accept responses only from the registered Bridge window
+  if (e.source !== bridgeWindow) {
+    return;
+  }
+
+  if (
+    d.type === 'TOWNSITE_RPC_RESULT' &&
+    pending.has(String(d.id))
+  ) {
+
     const p = pending.get(String(d.id));
+
     pending.delete(String(d.id));
-    if (d.error) p.reject(Error(d.error));
-    else p.resolve(d.result);
+
+    if (d.error) {
+      p.reject(Error(d.error));
+    } else {
+      p.resolve(d.result);
+    }
+
   }
+
 });
-
-function startBridge(){
-  if (!GAS_URL.startsWith('https://script.google.com/macros/s/')) {
-    console.error('Invalid Apps Script deployment URL.');
-    return;
-  }
-  const u = new URL(GAS_URL);
-  u.searchParams.set('mode','pwaBridge');
-  $('gasBridge').src = u.toString();
-}
-
-// Kung hindi dumating ang READY message, mag-log ng diagnostic para madaling
-// makita kung hindi nag-load ang deployment o mali ang Bridge file/deployment.
-setTimeout(() => {
-  if (!bridgeReady) console.error('Apps Script Bridge did not send TOWNSITE_BRIDGE_READY. Check deployment URL, access, and PWA_Bridge filename.');
-}, 12000);
+  function startBridge(){if(!GAS_URL.startsWith('https://script.google.com/macros/s/'))return;const u=new URL(GAS_URL);u.searchParams.set('mode','pwaBridge');$('gasBridge').src=u.toString()}
 function drawTable(id,headers,rows){const t=$(id);t.replaceChildren();if(!rows||!rows.length){t.innerHTML='<tbody><tr><td>Wala pang record.</td></tr></tbody>';return}const thead=document.createElement('thead'),hr=document.createElement('tr');(headers||rows[0].map((_,i)=>'Column '+(i+1))).forEach(h=>{const th=document.createElement('th');th.textContent=h;hr.append(th)});thead.append(hr);const body=document.createElement('tbody');rows.forEach(row=>{const tr=document.createElement('tr');row.forEach(v=>{const td=document.createElement('td');td.textContent=v??'';tr.append(td)});body.append(tr)});t.append(thead,body)}
 function drawCutoff(id, rows) {
   const headers = [
@@ -662,19 +660,12 @@ let adminHouseData=[];
 const originalLoadAdminHouses=loadAdminHouses;
 loadAdminHouses=async function(){await originalLoadAdminHouses();const r=await rpc('adminGetHouses',[adminToken]);adminHouseData=r.houses||[];populateOccupancyUnitLists();};
 function updateOccupancyForm(){
-  const actionEl=$('occupancyAction');
-  if(!actionEl) return;
-  const action=actionEl.value;
-  const destinationWrap=$('occupancyDestinationWrap');
-  if(destinationWrap) destinationWrap.classList.toggle('hidden',action!=='TRANSFER');
-  const personFields=$('occupancyPersonFields');
-  if(personFields) personFields.classList.toggle('hidden',action==='VACATE'||action==='TRANSFER');
-  const dateLabel=$('occupancyDateLabel');
-  if(dateLabel) dateLabel.textContent=action==='VACATE'?'Date Vacated (Last Day Occupied)':'Effective Date / Date Occupied';
-  const processButton=$('processOccupancyBtn');
-  if(processButton) processButton.textContent=action==='VACATE'?'Vacate Housing Unit':'Process Occupancy Transaction';
-  const sourceSelect=$('occupancySource');
-  if(sourceSelect && sourceSelect.previousElementSibling) sourceSelect.previousElementSibling.textContent=action==='NEW'?'Vacant Housing Unit':action==='VACATE'?'Housing Unit to Vacate':'Current / Source Housing Unit';
+  const action=$('occupancyAction').value;
+  $('occupancyDestinationWrap').classList.toggle('hidden',action!=='TRANSFER');
+  $('occupancyPersonFields').classList.toggle('hidden',action==='VACATE'||action==='TRANSFER');
+  $('occupancyDateLabel').textContent=action==='VACATE'?'Date Vacated (Last Day Occupied)':'Effective Date / Date Occupied';
+  $('processOccupancyBtn').textContent=action==='VACATE'?'Vacate Housing Unit':'Process Occupancy Transaction';
+  $('occupancySource').previousElementSibling.textContent=action==='NEW'?'Vacant Housing Unit':action==='VACATE'?'Housing Unit to Vacate':'Current / Source Housing Unit';
 }
 $('occupancyAction').addEventListener('change',updateOccupancyForm);
 updateOccupancyForm();
