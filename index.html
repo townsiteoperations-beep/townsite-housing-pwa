@@ -662,12 +662,19 @@ let adminHouseData=[];
 const originalLoadAdminHouses=loadAdminHouses;
 loadAdminHouses=async function(){await originalLoadAdminHouses();const r=await rpc('adminGetHouses',[adminToken]);adminHouseData=r.houses||[];populateOccupancyUnitLists();};
 function updateOccupancyForm(){
-  const action=$('occupancyAction').value;
-  $('occupancyDestinationWrap').classList.toggle('hidden',action!=='TRANSFER');
-  $('occupancyPersonFields').classList.toggle('hidden',action==='VACATE'||action==='TRANSFER');
-  $('occupancyDateLabel').textContent=action==='VACATE'?'Date Vacated (Last Day Occupied)':'Effective Date / Date Occupied';
-  $('processOccupancyBtn').textContent=action==='VACATE'?'Vacate Housing Unit':'Process Occupancy Transaction';
-  $('occupancySource').previousElementSibling.textContent=action==='NEW'?'Vacant Housing Unit':action==='VACATE'?'Housing Unit to Vacate':'Current / Source Housing Unit';
+  const actionEl=$('occupancyAction');
+  if(!actionEl) return;
+  const action=actionEl.value;
+  const destinationWrap=$('occupancyDestinationWrap');
+  if(destinationWrap) destinationWrap.classList.toggle('hidden',action!=='TRANSFER');
+  const personFields=$('occupancyPersonFields');
+  if(personFields) personFields.classList.toggle('hidden',action==='VACATE'||action==='TRANSFER');
+  const dateLabel=$('occupancyDateLabel');
+  if(dateLabel) dateLabel.textContent=action==='VACATE'?'Date Vacated (Last Day Occupied)':'Effective Date / Date Occupied';
+  const processButton=$('processOccupancyBtn');
+  if(processButton) processButton.textContent=action==='VACATE'?'Vacate Housing Unit':'Process Occupancy Transaction';
+  const sourceSelect=$('occupancySource');
+  if(sourceSelect && sourceSelect.previousElementSibling) sourceSelect.previousElementSibling.textContent=action==='NEW'?'Vacant Housing Unit':action==='VACATE'?'Housing Unit to Vacate':'Current / Source Housing Unit';
 }
 $('occupancyAction').addEventListener('change',updateOccupancyForm);
 updateOccupancyForm();
