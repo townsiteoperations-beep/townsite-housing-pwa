@@ -102,7 +102,7 @@ textarea{width:100%;min-height:110px;padding:13px 14px;border:1px solid #cbd9cf;
       <p class="muted">Palitan ang occupant o i-transfer ang employee sa ibang housing unit. Nananatili ang dating occupancy at consumption history.</p>
       <button class="secondary" id="initializeOccupancyBtn" type="button">Initialize Existing Occupants (September 1, 2026)</button>
       <label>Transaction Type</label>
-      <select id="occupancyAction"><option value="REPLACE">Replace Occupant</option><option value="TRANSFER">Transfer Unit</option><option value="NEW">New Occupancy (Vacant Unit)</option><option value="VACATE">Vacate Housing Unit</option></select>
+      <select id="occupancyAction"><option value="REPLACE">Replace Occupant</option><option value="TRANSFER">Transfer Unit</option></select>
       <label>Current / Source Housing Unit</label><select id="occupancySource"><option value="">Select source unit</option></select>
       <div id="occupancyDestinationWrap" class="hidden"><label>Destination Housing Unit</label><select id="occupancyDestination"><option value="">Select destination unit</option></select></div>
       <label>New Occupant Name</label><input id="occupancyNewName" maxlength="120" placeholder="Full name">
@@ -659,61 +659,27 @@ function populateOccupancyUnitLists(){
 let adminHouseData=[];
 const originalLoadAdminHouses=loadAdminHouses;
 loadAdminHouses=async function(){await originalLoadAdminHouses();const r=await rpc('adminGetHouses',[adminToken]);adminHouseData=r.houses||[];populateOccupancyUnitLists();};
-function updateOccupancyForm(){
-  const action=$('occupancyAction').value;
-  $('occupancyDestinationWrap').classList.toggle('hidden',action!=='TRANSFER');
-  $('occupancyPersonFields').classList.toggle('hidden',action==='VACATE'||action==='TRANSFER');
-  $('occupancyDateLabel').textContent=action==='VACATE'?'Date Vacated (Last Day Occupied)':'Effective Date / Date Occupied';
-  $('processOccupancyBtn').textContent=action==='VACATE'?'Vacate Housing Unit':'Process Occupancy Transaction';
-  $('occupancySource').previousElementSibling.textContent=action==='NEW'?'Vacant Housing Unit':action==='VACATE'?'Housing Unit to Vacate':'Current / Source Housing Unit';
-}
-$('occupancyAction').addEventListener('change',updateOccupancyForm);
-updateOccupancyForm();
+$('occupancyAction').addEventListener('change',()=>{$('occupancyDestinationWrap').classList.toggle('hidden',$('occupancyAction').value!=='TRANSFER');});
 $('initializeOccupancyBtn').addEventListener('click',async()=>{
   if(!confirm('Ise-set ang Date Occupied ng lahat ng existing active occupants na walang date sa September 1, 2026 at gagawa ng initial occupancy history. Ituloy?'))return;
   const b=$('initializeOccupancyBtn');b.disabled=true;b.textContent='Initializing...';
-  try{const r=await rpc('adminInitializeOccupancy',[adminToken]);if(!r||!r.success)throw Error(r?.message||'Initialization failed.');setMsg('occupancyResult',r.message+' Updated: '+r.updated+'; History added: '+r.historyAdded,false);await loadAdminHouses();}
+  try{const r=await rpc('adminInitializeOccupancy',[adminToken]);if(!r||!r.success)throw Error(r?.message||'Initialization failed.');setMsg('occupancyResult',r.message+' Updated: '+r.updated+'; History added: '+r.historyAdded,false);}
   catch(e){setMsg('occupancyResult',e.message,true);}finally{b.disabled=false;b.textContent='Initialize Existing Occupants (September 1, 2026)';}
 });
 $('processOccupancyBtn').addEventListener('click',async()=>{
   const action=$('occupancyAction').value, source=$('occupancySource').value, dest=$('occupancyDestination').value;
   const name=$('occupancyNewName').value.trim(), emp=$('occupancyNewEmployee').value.trim(), company=$('occupancyNewCompany').value.trim(), date=$('occupancyEffectiveDate').value;
-  if(!source||!date||((action==='REPLACE'||action==='NEW')&&(!name||!emp))||(action==='TRANSFER'&&!dest)){
-    setMsg('occupancyResult','Pakikumpleto ang mga kinakailangang field.',true);return;
-  }
-  if((action==='NEW'||action==='TRANSFER') && action==='NEW' && adminHouseData.some(h=>h.employeeCode && h.employeeCode.toLowerCase()===emp.toLowerCase())){
-    setMsg('occupancyResult','Naka-assign na ang Employee Code sa ibang housing unit.',true);return;
-  }
-  const promptText=action==='TRANSFER'?'I-transfer ang current occupant mula '+source+' papuntang '+dest+'?':
-    action==='NEW'?'I-assign si '+name+' sa vacant unit '+source+'?':
-    action==='VACATE'?'I-vacate ang '+source+'? Ang date na ilalagay ay ang last day occupied.':
-    'Palitan ang current occupant ng '+source+'?';
-  if(!confirm(promptText+' Ang dating account ay mare-reset kung may current occupant.'))return;
+  if(!source||!name||!emp||!date||(action==='TRANSFER'&&!dest)){setMsg('occupancyResult','Pakikumpleto ang lahat ng kinakailangang field.',true);return;}
+  const promptText=action==='TRANSFER'?'I-transfer ang occupant mula '+source+' papuntang '+dest+'?':'Palitan ang current occupant ng '+source+'?';
+  if(!confirm(promptText+' Ang dating account ay mare-reset at gagawa ng bagong Registration Code.'))return;
   const b=$('processOccupancyBtn');b.disabled=true;b.textContent='Processing...';
   try{
     const r=await rpc('adminManageOccupancy',[adminToken,action,source,dest,name,emp,company,date]);
     if(!r||!r.success)throw Error(r?.message||'Hindi natapos ang occupancy transaction.');
-    $('occupancyResult').replaceChildren();
-    const strong=document.createElement('strong');strong.textContent=r.message;$('occupancyResult').append(strong);
-    if(r.registrationCode){
-      const br=document.createElement('br'), label=document.createTextNode('House No.: '+r.houseNo+' | New Registration Code: '), code=document.createElement('strong'), expiry=document.createElement('div');
-      code.textContent=r.registrationCode;expiry.textContent='Expires: '+r.expires;$('occupancyResult').append(br,label,code,expiry);
-    }
-    $('occupancyResult').classList.remove('hidden');
-    $('occupancyNewName').value='';$('occupancyNewEmployee').value='';$('occupancyNewCompany').value='';
-    await loadAdminHouses();
-  }catch(e){setMsg('occupancyResult',e.message,true);}
-  finally{b.disabled=false;updateOccupancyForm();}
-});
-$('viewOccupancyHistoryBtn').addEventListener('click',async()=>{
-  const wrap=$('occupancyHistoryWrap');
-  if(!wrap.classList.contains('hidden')){wrap.classList.add('hidden');return;}
-  try{
-    const r=await rpc('adminGetOccupancyHistory',[adminToken]);
-    if(!r||!r.success)throw Error(r?.message||'Hindi makuha ang occupancy history.');
-    drawTable('occupancyHistoryTable',r.headers||[],r.records||[]);
-    wrap.classList.remove('hidden');
-  }catch(e){setMsg('occupancyResult',e.message,true);}
+    $('occupancyResult').innerHTML='';
+    const strong=document.createElement('strong');strong.textContent=r.message;const br=document.createElement('br');const label=document.createTextNode('House No.: '+r.houseNo+' | New Registration Code: ');const code=document.createElement('strong');code.textContent=r.registrationCode;const expiry=document.createElement('div');expiry.textContent='Expires: '+r.expires;$('occupancyResult').append(strong,br,label,code,expiry);$('occupancyResult').classList.remove('hidden');
+    $('occupancyNewName').value='';$('occupancyNewEmployee').value='';$('occupancyNewCompany').value='';await loadAdminHouses();
+  }catch(e){setMsg('occupancyResult',e.message,true);}finally{b.disabled=false;b.textContent='Process Occupancy Transaction';}
 });
 
 $('adminLogout').addEventListener('click',async()=>{
