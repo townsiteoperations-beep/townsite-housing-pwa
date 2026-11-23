@@ -222,45 +222,35 @@ function rpc(method, args) {
 }
 window.addEventListener('message', e => {
 
-  // Accept messages only from this page's Apps Script Bridge iframe.
-  // Apps Script may serve the web app from script.google.com or
-  // redirect the HTML output to a script.googleusercontent.com origin.
-  const bridgeFrame = $('gasBridge');
+  // Apps Script HTML Service may place the Bridge inside a Google wrapper.
+  // In that case, the message source is the inner googleusercontent frame,
+  // not gasBridge.contentWindow. Accept only Google's Apps Script origins.
   const isAppsScriptOrigin =
     e.origin === 'https://script.google.com' ||
     e.origin === 'https://script.googleusercontent.com' ||
     e.origin.endsWith('.googleusercontent.com');
 
-  if (!isAppsScriptOrigin || !bridgeFrame || e.source !== bridgeFrame.contentWindow) {
-    return;
-  }
+  if (!isAppsScriptOrigin) return;
 
   const d = e.data || {};
 
-  // Capture the actual Bridge window
+  // Register the actual inner Bridge window that sends READY.
   if (d.type === 'TOWNSITE_BRIDGE_READY') {
-
     bridgeWindow = e.source;
     bridgeReady = true;
-
     console.log('Townsite Bridge Connected!');
     console.log('Bridge Ready:', bridgeReady);
-
     return;
   }
 
-  // Accept responses only from the registered Bridge window
-  if (e.source !== bridgeWindow) {
-    return;
-  }
+  // After registration, accept responses only from that same Bridge window.
+  if (!bridgeReady || e.source !== bridgeWindow) return;
 
   if (
     d.type === 'TOWNSITE_RPC_RESULT' &&
     pending.has(String(d.id))
   ) {
-
     const p = pending.get(String(d.id));
-
     pending.delete(String(d.id));
 
     if (d.error) {
@@ -268,10 +258,9 @@ window.addEventListener('message', e => {
     } else {
       p.resolve(d.result);
     }
-
   }
-
 });
+
   function startBridge(){if(!GAS_URL.startsWith('https://script.google.com/macros/s/'))return;const u=new URL(GAS_URL);u.searchParams.set('mode','pwaBridge');$('gasBridge').src=u.toString()}
 function drawTable(id,headers,rows){const t=$(id);t.replaceChildren();if(!rows||!rows.length){t.innerHTML='<tbody><tr><td>Wala pang record.</td></tr></tbody>';return}const thead=document.createElement('thead'),hr=document.createElement('tr');(headers||rows[0].map((_,i)=>'Column '+(i+1))).forEach(h=>{const th=document.createElement('th');th.textContent=h;hr.append(th)});thead.append(hr);const body=document.createElement('tbody');rows.forEach(row=>{const tr=document.createElement('tr');row.forEach(v=>{const td=document.createElement('td');td.textContent=v??'';tr.append(td)});body.append(tr)});t.append(thead,body)}
 function drawCutoff(id, rows) {
